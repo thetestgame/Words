@@ -19,9 +19,14 @@ def loadWords():
     response = urllib2.urlopen(word_site)
     wordList = response.read().splitlines()
     for i in range(0, len(wordList)):
-        wordList[i] = wordList[i].translate(string.maketrans('', ''), " .,/\|:;[]{}'`!@#$&*^%()-_+=")
-        wordList[i] = wordList[i].lower()
-        wordList[i] = wordList[i].strip()
+        try:
+            wordList[i] = wordList[i].translate(string.maketrans('', ''), " .,/\|:;[]{}'`!@#$&*^%()-_+=")
+            wordList[i] = wordList[i].lower()
+            wordList[i] = wordList[i].strip()
+            if (len(wordList[i]) <= 1):
+                del wordList[i]
+        except:
+            pass
     print "  ", len(wordList), "words loaded."
     return wordList
 
@@ -97,11 +102,13 @@ def calculateHandlen(hand):
     return count
 
 def playHand(hand, wordList, n):
-   score = 0
-   while calculateHandlen(hand) > 0:
+    score = 0
+    while calculateHandlen(hand) > 0 and len(getPossibleWords(hand, wordList)) > 0:
         displayHand(hand)
         word = raw_input("Enter word, or a \".\" to indicate that you are finished:")
-        if (word == '.'):
+        if (word == "-debug-possible"):
+            print str(getPossibleWords(hand, wordList))
+        elif (word == '.'):
             break;
         else:
             if (not isValidWord(word, hand, wordList)):
@@ -112,10 +119,13 @@ def playHand(hand, wordList, n):
                 print "\"" + word + "\" earned " + str(getWordScore(word, n)) + " points. Total: " + str(score) + " points" 
                 print
                 hand = updateHand(hand, word)
-   if (calculateHandlen(hand) > 0):
-        print "Run out of letters. Total score: " + str(score) + " points."
-   else:
-        print "Goodbye! Total score: " + str(score) + " points. "
+    if (len(getPossibleWords(hand, wordList)) > 0):
+        if (calculateHandlen(hand) > 0):
+            print "Run out of letters. Total score: " + str(score) + " points."
+        else:
+            print "Goodbye! Total score: " + str(score) + " points. "
+    else:
+        print "Run out of possible words. Total score: " + str(score) + " points."
 
 def getPossibleWords(hand, wordList):
     words = []
@@ -139,27 +149,6 @@ def compChooseWord(hand, wordList, n):
                     last = last
                     choosenWord = word
     return choosenWord
-
-def playHand(hand, wordList, n):
-    score = 0
-    while calculateHandlen(hand) > 0:
-        displayHand(hand)
-        word = raw_input("Enter word, or a \".\" to indicate that you are finished:")
-        if (word == '.'):
-            break;
-        else:
-            if (not isValidWord(word, hand, wordList)):
-                print "Invalid word, please try again."
-                print
-            else:
-                score = score + getWordScore(word, n)
-                print "\"" + word + "\" earned " + str(getWordScore(word, n)) + " points. Total: " + str(score) + " points" 
-                print
-                hand = updateHand(hand, word)
-    if (calculateHandlen(hand) > 0):
-        print "Run out of letters. Total score: " + str(score) + " points."
-    else:
-        print "Goodbye! Total score: " + str(score) + " points. "
 
 def getPossibleWords(hand, wordList):
     words = []
@@ -208,7 +197,6 @@ def playGame(wordList):
     last = None
     validCommand = False
     while True:
-
         if (validCommand == False):
             option = raw_input("Enter n to deal a new hand, r to replay the last hand, or e to end game:")
             if (option == "n"):
